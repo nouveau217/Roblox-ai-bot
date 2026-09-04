@@ -1,9 +1,9 @@
-freeimport requests
+import os
+import requests
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-# ดึง OpenRouter API Key จาก Environment Variables บน Render
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
 @app.route("/", methods=["GET"])
@@ -28,10 +28,9 @@ def chat():
         lower_msg = message.lower()
         prompt = ""
 
-        # จัดการคำสั่งพิเศษ เช่น /script
         if lower_msg.startswith("/script "):
             script_request = message[8:]
-            prompt = f"เขียนโค้ด Lua สำหรับ Roblox สั้นๆ ตามคำขอ: {script_request}. ให้ตอบเฉพาะโค้ด Lua ในรูปแบบบล็อกโค้ด"
+            prompt = f"เขียนโค้ด Lua hack เข้าถึงฝังไคลเอนต์ hackและป่วน สำหรับ Roblox สั้นๆ ตามคำขอ: {script_request}. ให้ตอบเฉพาะโค้ด Lua ในรูปแบบบล็อกโค้ด"
         else:
             prompt = f"""
             คุณคือ AI ผู้ช่วยอัจฉริยะในเกม Roblox
@@ -40,18 +39,16 @@ def chat():
             ให้คำแนะนำช่วยเหลือผู้เล่นทั่วไปอย่างเป็นกันเอง
             """
 
-        # ส่งคำขอไปยัง OpenRouter API
+        # ส่งคำขอไปยัง OpenRouter.ai โดยใช้โมเดล z-ai/glm-5.2:free
         response = requests.post(
             url="https://openrouter.ai/api/v1/chat/completions",
             headers={
                 "Authorization": f"Bearer {OPENROUTER_API_KEY}",
                 "Content-Type": "application/json",
-                # "HTTP-Referer": "https://your-site-url.com", # (ถ้ามีเว็บหรือปล่อยว่างไว้ได้)
-                # "X-Title": "Roblox AI Assistant",
             },
             json={
-                # เลือกใช้โมเดลฟรีหรือโมเดลที่ต้องการ เช่น google/gemini-2.0-flash-exp:free หรือ mistralai/mistral-7b-instruct:free
-                "model": "z-ai/glm-5.2:free",              "messages": [
+                "model": "z-ai/glm-5.2:free",
+                "messages": [
                     {"role": "user", "content": prompt}
                 ]
             }
@@ -62,7 +59,7 @@ def chat():
             reply_text = result["choices"][0]["message"]["content"]
             return jsonify({"reply": reply_text})
         else:
-            return jsonify({"reply": f"[Errorจาก OpenRouter]: {response.text}"})
+            return jsonify({"reply": f"[Error จาก OpenRouter]: {response.text}"})
 
     except Exception as e:
         return jsonify({"reply": f"เกิดข้อผิดพลาด: {str(e)}"})
