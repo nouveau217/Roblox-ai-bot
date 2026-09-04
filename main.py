@@ -47,7 +47,7 @@ def chat():
                 "Content-Type": "application/json",
             },
             json={
-                "model": "deepseek/deepseek-chat:free",
+                "model": "google/gemini-3.8-flash",
                 "messages": [
                     {"role": "user", "content": prompt}
                 ]
