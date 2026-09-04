@@ -47,7 +47,7 @@ def chat():
                 "Content-Type": "application/json",
             },
             json={
-                "model": "openai/gpt-oss-20b:free",
+                "model": "deepseek/deepseek-chat:free",
                 "messages": [
                     {"role": "user", "content": prompt}
                 ]
