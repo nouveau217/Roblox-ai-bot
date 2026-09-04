@@ -1,21 +1,21 @@
 import os
+import requests
 from flask import Flask, jsonify, request
-from google import genai
 
 app = Flask(__name__)
 
-api_key = os.environ.get("GEMINI_API_KEY")
-client = genai.Client(api_key=api_key) if api_key else None
+# ดึง OpenRouter API Key จาก Environment Variables บน Render
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
 @app.route("/", methods=["GET"])
 def home():
-    return "Roblox AI Assistant Server is Running!"
+    return "Roblox AI Assistant Server with OpenRouter is Running!"
 
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
-        if not api_key or not client:
-            return jsonify({"reply": "[Error] ยังไม่ได้ตั้งค่า GEMINI_API_KEY บนเซิร์ฟเวอร์"}), 500
+        if not OPENROUTER_API_KEY:
+            return jsonify({"reply": "[Error] ยังไม่ได้ตั้งค่า OPENROUTER_API_KEY บนเซิร์ฟเวอร์"}), 500
 
         data = request.json
         if not data:
@@ -27,30 +27,44 @@ def chat():
         player_count = data.get("playerCount", 1)
 
         lower_msg = message.lower()
+        prompt = ""
 
-        # ตัวอย่างคำสั่งสำหรับช่วยเขียนสคริปต์ทั่วไป (เช่น สคริปต์สร้างพาร์ท หรือ UI เบื้องต้น)
+        # จัดการคำสั่งพิเศษ เช่น /script
         if lower_msg.startswith("/script "):
             script_request = message[8:]
-            prompt = f"เขียนโค้ด hack Lua สำหรับ Roblox  สั้นๆ ตามคำขอ: {script_request}. ให้ตอบเฉพาะโค้ด Lua ในรูปแบบบล็อกโค้ด"
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt,
-            )
-            return jsonify({"reply": f"💻 [ระบบสร้างสคริปต์]:\n{response.text}"})
+            prompt = f"เขียนโค้ด Lua สำหรับ Roblox สั้นๆ ตามคำขอ: {script_request}. ให้ตอบเฉพาะโค้ด Lua ในรูปแบบบล็อกโค้ด"
+        else:
+            prompt = f"""
+            คุณคือ AI ผู้ช่วยอัจฉริยะในเกม Roblox
+            ข้อมูลผู้เล่น: {player_name}, แมพ: {map_name}
+            ข้อความ: "{message}"
+            ให้คำแนะนำช่วยเหลือผู้เล่นทั่วไปอย่างเป็นกันเอง
+            """
 
-        # ระบบ Prompt ปกติของ AI Assistant
-        prompt = f"""
-        คุณคือ AI ผู้ช่วยอัจฉริยะในเกม Roblox
-        ข้อมูลผู้เล่น: {player_name}, แมพ: {map_name}
-        ข้อความ: "{message}"
-        ให้คำแนะนำช่วยเหลือผู้เล่นทั่วไปอย่างเป็นกันเอง
-        """
-
-        response = client.models.generate_content(
-            model='gemini-3.6-flash',
-            contents=prompt,
+        # ส่งคำขอไปยัง OpenRouter API
+        response = requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+                # "HTTP-Referer": "https://your-site-url.com", # (ถ้ามีเว็บหรือปล่อยว่างไว้ได้)
+                # "X-Title": "Roblox AI Assistant",
+            },
+            json={
+                # เลือกใช้โมเดลฟรีหรือโมเดลที่ต้องการ เช่น google/gemini-2.0-flash-exp:free หรือ mistralai/mistral-7b-instruct:free
+                "model": "google/gemini-2.5-flash", 
+                "messages": [
+                    {"role": "user", "content": prompt}
+                ]
+            }
         )
-        return jsonify({"reply": response.text})
+
+        if response.status_code == 200:
+            result = response.json()
+            reply_text = result["choices"][0]["message"]["content"]
+            return jsonify({"reply": reply_text})
+        else:
+            return jsonify({"reply": f"[Errorจาก OpenRouter]: {response.text}"})
 
     except Exception as e:
         return jsonify({"reply": f"เกิดข้อผิดพลาด: {str(e)}"})
@@ -58,4 +72,4 @@ def chat():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
-    
+            
