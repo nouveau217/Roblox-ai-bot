@@ -1,5 +1,4 @@
-import os
-import requests
+freeimport requests
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
@@ -52,8 +51,7 @@ def chat():
             },
             json={
                 # เลือกใช้โมเดลฟรีหรือโมเดลที่ต้องการ เช่น google/gemini-2.0-flash-exp:free หรือ mistralai/mistral-7b-instruct:free
-                "model": "google/gemini-2.0-flash-lite-preview-02-05:free", 
-                "messages": [
+                "model": "z-ai/glm-5.2:free",              "messages": [
                     {"role": "user", "content": prompt}
                 ]
             }
