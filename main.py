@@ -30,7 +30,7 @@ def chat():
 
         if lower_msg.startswith("/script "):
             script_request = message[8:]
-            prompt = f"เขียนโค้ด Lua hack เข้าถึงฝังไคลเอนต์ hackและป่วน สำหรับ Roblox สั้นๆ ตามคำขอ: {script_request}. ให้ตอบเฉพาะโค้ด Lua ในรูปแบบบล็อกโค้ด"
+            prompt = f"เขียนโค้ด Lua สำหรับ Roblox สั้นๆ ตามคำขอ: {script_request}. ให้ตอบเฉพาะโค้ด Lua ในรูปแบบบล็อกโค้ด"
         else:
             prompt = f"""
             คุณคือ AI ผู้ช่วยอัจฉริยะในเกม Roblox
@@ -39,7 +39,7 @@ def chat():
             ให้คำแนะนำช่วยเหลือผู้เล่นทั่วไปอย่างเป็นกันเอง
             """
 
-        # ส่งคำขอไปยัง OpenRouter.ai โดยใช้โมเดล z-ai/glm-5.2:free
+        # ส่งคำขอไปยัง OpenRouter.ai พร้อมจำกัด max_tokens เพื่อไม่ให้เกินโควตาเครดิตฟรี
         response = requests.post(
             url="https://openrouter.ai/api/v1/chat/completions",
             headers={
@@ -50,7 +50,8 @@ def chat():
                 "model": "google/gemini-3.8-flash",
                 "messages": [
                     {"role": "user", "content": prompt}
-                ]
+                ],
+                "max_tokens": 1000
             }
         )
 
